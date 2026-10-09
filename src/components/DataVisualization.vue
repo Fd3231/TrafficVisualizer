@@ -1,16 +1,17 @@
 <template>
-    <div class="container" v-if="Object.keys(mapStore.junctions).length > 0">
-      <div class="mt-4 tabs">
-        <button v-for="tab in tabs" :key="tab" @click="activeTab = tab; searchTerm = ''"
-                :class="['btn', activeTab === tab ? 'btn-warning' : 'btn-light']">
+    <div class="container" v-if="hasJunctions">
+      <div class="mt-4 tabs text-start">
+        <button v-for="tab in tabs" :key="tab" class = "btn me-2" 
+                :class="activeTab === tab ? 'btn-warning' : 'btn-light'"
+                @click="selectTab(tab)">
           {{ tab }}
         </button>
-        <div class="d-inline-block search-bar">
+        <div class="d-inline-block search-bar float-end">
           <input type="text" class="form-control" placeholder="Type to search" v-model="searchTerm">
         </div>
       </div>
       <!--Links-->
-      <div class="table-container mt-4" v-if="activeTab === 'Links'">
+      <div class="table-container mt-2 overflow-y-auto w-100" v-if="activeTab === 'Links'">
         <table class="table table-hover rounded-2 overflow-hidden">
           <thead class="table-dark">
             <tr>
@@ -23,7 +24,7 @@
             </tr>
           </thead>
           <tbody class="table-group-divider">
-            <tr v-for="link in filteredSearch() as any">
+            <tr v-for="link in filteredSearch as any">
               <td>{{ link.id }}</td>
               <td>{{ (link.capacity).toFixed(2) }}</td>
               <td>{{ (link.occupancy).toFixed(2) }}</td>
@@ -38,7 +39,7 @@
         </table>
       </div>
       <!--Junctions-->
-      <div class="table-container mt-4" v-if="activeTab === 'Junctions'">
+      <div class="table-container mt-2 overflow-y-auto w-100" v-if="activeTab === 'Junctions'">
         <table class="table table-hover rounded-2 overflow-hidden">
           <thead class="table-dark">
             <tr>
@@ -49,7 +50,7 @@
             </tr>
           </thead>
           <tbody class="table-group-divider">
-            <tr v-for="junction in filteredSearch() as any">
+            <tr v-for="junction in filteredSearch as any">
               <td>{{ junction.id }}</td>
               <td>{{ junction.greentime }}</td>
               <td>{{ junction.intertime }}</td>
@@ -59,7 +60,7 @@
         </table>
       </div>
       <!--Stages-->
-      <div class="table-container mt-4" v-if="activeTab === 'Stages'">
+      <div class="table-container mt-2 overflow-y-auto w-100" v-if="activeTab === 'Stages'">
         <table class="table table-hover rounded-2 overflow-hidden">
           <thead class="table-dark">
             <tr>
@@ -72,7 +73,7 @@
             </tr>
           </thead>
           <tbody class="table-group-divider">
-            <tr v-for="stage in filteredSearch() as any">
+            <tr v-for="stage in filteredSearch as any">
               <td>{{ stage.id }}</td>
               <td>{{ stage.juncId }}</td>
               <td><i v-if="stage.active" class="bi bi-circle-fill text-success"></i>
@@ -105,7 +106,7 @@
         </table>
       </div>
       <!--Configurations-->
-      <div class="table-container mt-4" v-if="activeTab === 'Configurations'">
+      <div class="table-container mt-2 overflow-y-auto w-100" v-if="activeTab === 'Configurations'">
         <table class="table table-hover rounded-2 overflow-hidden">
           <thead class="table-dark">
             <tr>
@@ -115,7 +116,7 @@
             </tr>
           </thead>
           <tbody class="table-group-divider">
-            <tr v-for="conf in filteredSearch() as any">
+            <tr v-for="conf in filteredSearch as any">
               <td>{{ conf.id }}</td>
               <td><i v-if="conf.active" class="bi bi-circle-fill text-success"></i>
                 <i v-else class="bi bi-circle-fill text-danger"></i>
@@ -146,49 +147,16 @@
 </template>
 
 <script setup lang="ts">
+import { useDataVisualiztion } from '../composables/useDataVisualization';
 
-  import { ref } from "vue";
-  import { useMapStore } from "../stores/useMapStore.ts";
-
-  const mapStore = useMapStore();
-  const tabs: string[] = ["Junctions", "Links", "Stages", "Configurations"];
-  let activeTab = ref("Junctions"); 
-  let searchTerm = ref("");
-
-  const filteredSearch = () => {
-
-      if (activeTab.value == "Junctions") {
-        return Object.values(mapStore.junctions).filter(junction =>
-          junction.id.toLowerCase().includes(searchTerm.value.toLowerCase())
-        );
-      } else if (activeTab.value == "Links") {
-        return mapStore.sortedLinks.filter(link => 
-          link.id.toLowerCase().includes(searchTerm.value.toLowerCase())
-        );
-      } else if (activeTab.value == "Configurations") {
-        return mapStore.sortedConfigurations.filter(configuration => 
-         configuration.id.toLowerCase().includes(searchTerm.value.toLowerCase())
-        );
-      } else {
-        return mapStore.sortedStages.filter(stage => 
-          stage.id.toLowerCase().includes(searchTerm.value.toLowerCase())
-        );
-      }
-  }
+  const { tabs, activeTab, searchTerm, filteredSearch, hasJunctions,
+          selectTab} = useDataVisualiztion();
 
 </script>
 
 <style>
-  table {
-    table-layout: auto;
-    width: 100%;
-    border-collapse: collapse;
-    border-radius: 20px;
-  }
   .table-container {
     max-height: 500px;
-    overflow-y: auto;
-    width: 100%;
   }
   th {
     position: sticky;
@@ -197,18 +165,6 @@
   }
   .subtable {
     position: sticky;
-  }
-  .tabs {
-    text-align: left;
-    .btn {
-      margin-right: 10px;
-    }
-    margin-bottom: -10px;
-  }
-  .sep {
-    font-size: large;
-    margin-right: 5px;
-    color:gray
   }
   .form-switch .form-check-input:focus {
     border-color: rgba(0, 0, 0, 0.25);
@@ -219,9 +175,6 @@
     background-color: goldenrod;
     border-color: goldenrod;
     border: none;
-  }
-  .search-bar {
-    float: right;
   }
   .search-bar input:focus {
     outline: none !important;
