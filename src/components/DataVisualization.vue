@@ -149,10 +149,8 @@
 
   import { ref } from "vue";
   import { useMapStore } from "../stores/useMapStore.ts";
-  import { useSimulationStore } from "../stores/useSimulationStore.ts";
 
   const mapStore = useMapStore();
-  const simulationStore = useSimulationStore();
   const tabs: string[] = ["Junctions", "Links", "Stages", "Configurations"];
   let activeTab = ref("Junctions"); 
   let searchTerm = ref("");
@@ -164,15 +162,15 @@
           junction.id.toLowerCase().includes(searchTerm.value.toLowerCase())
         );
       } else if (activeTab.value == "Links") {
-        return mapStore.getLinks().filter(link => 
+        return mapStore.sortedLinks.filter(link => 
           link.id.toLowerCase().includes(searchTerm.value.toLowerCase())
         );
       } else if (activeTab.value == "Configurations") {
-        return mapStore.getConfigurations().filter(configuration => 
+        return mapStore.sortedConfigurations.filter(configuration => 
          configuration.id.toLowerCase().includes(searchTerm.value.toLowerCase())
         );
       } else {
-        return mapStore.getStages().filter(stage => 
+        return mapStore.sortedStages.filter(stage => 
           stage.id.toLowerCase().includes(searchTerm.value.toLowerCase())
         );
       }
