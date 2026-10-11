@@ -81,11 +81,52 @@ export const useMapStore = defineStore("mapStore", () => {
     });
   }
 
+  function applyLink({ id, occupancy, counter }: Link) {
+    Object.assign(links.value[id], { occupancy, counter });
+  }
+
+  function applyJunction({ id, greentime, intertime, countcycle }: Junction) {
+    Object.assign(junctions.value[id], { greentime, intertime, countcycle });
+  }
+
+  function setStageActive(stage: Stage) {
+    const target = stages.value[stage.id];
+    for (const flow of target.flows) {
+      links.value[flow.fromLinkId].active = stage.active;
+      links.value[flow.toLinkId].active = stage.active;
+    }
+    target.active = stage.active;
+  }
+
+  function applyInterStage(stage: Stage) {
+    if (!stage.active) setStageActive(stage);
+    stages.value[stage.id].inter = stage.inter;
+  }
+
+  function applyActiveStage(stage: Stage) {
+    if (stage.active) setStageActive(stage);
+  }
+
+  function applyConfiguration({ id, active }: Configuration) {
+    configurations.value[id].active = active;
+  }
+
+  function applyStep(index: number) {
+    const step = steps.value[index];
+    if (!step) return;
+
+    step.links.forEach(applyLink);
+    step.junctions.forEach(applyJunction);
+    step.stages.forEach(applyInterStage);
+    step.stages.forEach(applyActiveStage);
+    step.configurations.forEach(applyConfiguration);
+  }
+
   return { junctions, links, stages, configurations, initialLinks,
     resetStore, steps, changeConfigurations, sortedStages, sortedConfigurations,
     sortedLinks,
     setMapData, reset, setSteps, resetSteps, setChangeConfigurations,
-    resetLinks, updateLinksCounter, calculateActiveLinks
+    resetLinks, updateLinksCounter, calculateActiveLinks, applyStep
   };
 
 })
