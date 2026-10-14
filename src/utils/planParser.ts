@@ -160,6 +160,5 @@ export function parsePlanData(rawData: string): ParsedData {
         }
     
     });
-    console.log(steps);
     return { steps, changeConfigurations };
 }
