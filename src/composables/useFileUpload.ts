@@ -2,10 +2,12 @@ import { computed, ref } from "vue";
 import { useMapStore } from "../stores/useMapStore";
 import { parseProblemData } from "../utils/problemParser";
 import { parsePlanData } from "../utils/planParser";
+import { useToast } from "./useToast";
 
 export function useFileUpload() {
 
     const mapStore = useMapStore();
+    const { showToast } = useToast();
     
     const problemFile = ref<File | null>(null);
     const planFile = ref<File | null>(null);

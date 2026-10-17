@@ -3,11 +3,13 @@ import FileUpload from './components/FileUpload.vue'
 import Simulation from './components/Simulation.vue';
 import TrafficMap from './components/TrafficMap.vue';
 import DataVisualization from './components/DataVisualization.vue';
+import Toast from './components/Toast.vue';
 </script>
 
 <template>
     <div class="container">
         <h1 class="title">Traffic Visualizer</h1>
+        <Toast/>
         <FileUpload/>
         <TrafficMap/>
         <Simulation/>
