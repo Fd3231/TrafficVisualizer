@@ -1,8 +1,8 @@
 import { computed, ref } from "vue";
 import { useMapStore } from "../stores/useMapStore";
-import { parseProblemData } from "../utils/problemParser";
 import { parsePlanData } from "../utils/planParser";
 import { useToast } from "./useToast";
+import { parseTrafficProblem } from "../utils/parser/traffic";
 
 export function useFileUpload() {
 
@@ -35,7 +35,17 @@ export function useFileUpload() {
         }
         try {
             const text = await problemFile.value.text();
-            const data = parseProblemData(text);
+            const result = parseTrafficProblem(text);
+
+            if (!result.data) {
+                const first = result.issues.find(i => i.severity === "error") ?? result.issues[0];
+                const where = first?.line ? `Line ${first.line}: ` : "";
+                showToast(`${where}${first?.message}`, "danger");
+                problemFileUploaded.value = false;
+                return;
+            }
+
+            const data = result.data;
             mapStore.resetSteps();
             mapStore.setMapData(data.junctions, data.links, data.stages, data.configurations);
             problemFileUploaded.value = true;
