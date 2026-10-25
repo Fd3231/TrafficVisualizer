@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { parseProblem, type Domain } from "../../../utils/parser/core/parse";
+import { parseProblem, type Domain } from "../../../../utils/problem-parser/core/parse";
 
 const VALID = "(define (problem p) (:objects a - t))";
 

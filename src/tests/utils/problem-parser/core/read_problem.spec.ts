@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { Issues } from "../../../utils/parser/core/issues";
-import { readFluent, readProblem, readTypedNames } from "../../../utils/parser/core/read_problem";
-import { readSExprs, type List } from "../../../utils/parser/core/sexpr";
+import { Issues } from "../../../../utils/problem-parser/core/issues";
+import { readProblem, readTypedNames, readFluent } from "../../../../utils/problem-parser/core/read_problem";
+import { readSExprs, type List } from "../../../../utils/problem-parser/core/sexpr";
 
 const read = (src: string) => {
     const issues = new Issues();

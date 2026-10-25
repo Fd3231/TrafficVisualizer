@@ -1,8 +1,8 @@
 import { computed, ref } from "vue";
 import { useMapStore } from "../stores/useMapStore";
-import { parsePlanData } from "../utils/planParser";
 import { useToast } from "./useToast";
-import { parseTrafficProblem } from "../utils/parser/traffic";
+import { parseTrafficProblem } from "../utils/problem-parser/traffic";
+import { parsePlanData } from "../utils/plan-parser/parsePlanData";
 
 export function useFileUpload() {
 
@@ -52,7 +52,7 @@ export function useFileUpload() {
             planFile.value = null;
             if (planInput.value) planInput.value.value = "";
         } catch(error) {
-            console.error("Error reading file:", error);
+            showToast("Error reading plan file", "danger");
         }
     }
 
@@ -62,10 +62,21 @@ export function useFileUpload() {
         try {
             const text = await planFile.value.text();
             const data = parsePlanData(text);
+
+            if (data.errors.list.length > 0) {
+                showToast(`${data.errors.list[0].message}`, "danger");
+                return;
+            }
+
+            if (!data.steps) {
+                showToast("Invalid plan", "danger"); 
+                return;
+            }
+
             mapStore.setSteps(data.steps);
             mapStore.setChangeConfigurations(data.changeConfigurations);
         } catch (error) {
-            console.error("Error reading plan file:", error);
+            showToast("Error reading plan file", "danger");
         }
     }
 

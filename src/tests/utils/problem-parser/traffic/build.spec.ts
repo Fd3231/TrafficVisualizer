@@ -1,11 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { Issues } from "../../../utils/parser/core/issues";
-import type { Problem } from "../../../utils/parser/core/read_problem";
-import { build } from "../../../utils/parser/traffic/build";
-import { Junction } from "../../../models/Junctions";
-import { Stage } from "../../../models/Stage";
-import { Configuration } from "../../../models/Configuration";
-import { Flow } from "../../../models/Flow";
+import { Issues } from "../../../../utils/problem-parser/core/issues";
+import type { Problem } from "../../../../utils/problem-parser/core/read_problem";
+import { build } from "../../../../utils/problem-parser/traffic/build";
+import { Junction } from "../../../../models/Junctions";
+import { Stage } from "../../../../models/Stage";
+import { Configuration } from "../../../../models/Configuration";
+import { Flow } from "../../../../models/Flow";
 
 const obj = (id: string, type: string, line = 1) => ({ id, type, line });
 const pred = (name: string, args: string[], line = 1) => ({ name, args, line });

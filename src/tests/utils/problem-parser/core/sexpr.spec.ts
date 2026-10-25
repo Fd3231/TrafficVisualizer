@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { headOf, isAtom, isList, readSExprs, tokenize } from "../../../utils/parser/core/sexpr";
-import { Issues } from "../../../utils/parser/core/issues";
+import { Issues } from "../../../../utils/problem-parser/core/issues";
+import { readSExprs, tokenize, isList, isAtom, headOf } from "../../../../utils/problem-parser/core/sexpr";
 
 describe("tokenize", () => {
     
