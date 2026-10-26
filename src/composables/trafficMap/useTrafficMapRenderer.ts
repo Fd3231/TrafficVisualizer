@@ -1,7 +1,11 @@
 import * as d3 from "d3";
 import type { Ref } from "vue";
-import { getIncrement, type MapEdge, type MapNode } from "./useTrafficMapData";
+import { type MapEdge, type MapNode } from "./useTrafficMapData";
 import { TRAFFIC_MAP_CONFIG } from "./trafficMapConfig";
+
+const NODE_RADIUS = TRAFFIC_MAP_CONFIG.node.radius;
+const ARROW = TRAFFIC_MAP_CONFIG.edge.arrow;
+const ARROW_LEN_RATIO = ((ARROW.tipX - ARROW.baseX) / ARROW.viewBox) * ARROW.size;
 
 export function useTrafficMapRenderer(container: Ref<SVGSVGElement | null>) {
     const colorScale = d3.scaleLinear<string>()
@@ -15,6 +19,7 @@ export function useTrafficMapRenderer(container: Ref<SVGSVGElement | null>) {
     let tooltip: d3.Selection<HTMLDivElement, unknown, null, undefined> | null = null;
 
     const occupancyColor = (e: MapEdge) => colorScale(e.occupancy / e.capacity);
+    const strokeWidths = new Map<string, number>();
 
     function addTooltip() {
         if (tooltip) return;
@@ -30,14 +35,32 @@ export function useTrafficMapRenderer(container: Ref<SVGSVGElement | null>) {
             .style("pointer-events", "none");
     }
 
-    function linkArc(d: any) {
+    function controlPoint(d: any): readonly [number, number] {
         const { x: sx, y: sy } = d.source;
         const { x: tx, y: ty } = d.target;
         const cd = 35 + (d.linknum - 1) * 12;
         const cx = (sx + tx) / 2, cy = (sy + ty) / 2;
         const cAngle = Math.atan2(ty - sy, tx - sx) + Math.PI / 2;
         const offset = (d.linknum - (d.linknum + 1) / 2) * cd;
-        return `Q ${cx + offset * Math.cos(cAngle)},${cy + offset * Math.sin(cAngle)} `;
+        return [cx + offset * Math.cos(cAngle), cy + offset * Math.sin(cAngle)];
+    }
+
+    function moveToward(p: { x: number; y: number }, q: readonly [number, number], r: number) {
+        const dx = q[0] - p.x, dy = q[1] - p.y;
+        const len = Math.hypot(dx, dy) || 1;
+        return [p.x + (dx / len) * r, p.y + (dy / len) * r] as const;
+    }
+
+    function linkPath(d: any): string {
+        const dist = Math.hypot(d.target.x - d.source.x, d.target.y - d.source.y);
+        if (dist <= 2 * NODE_RADIUS) return "";
+
+        const arrowLen = ARROW_LEN_RATIO * (strokeWidths.get(d.id) ?? 1);
+
+        const c = controlPoint(d);
+        const [x1, y1] = moveToward(d.source, c, NODE_RADIUS);
+        const [x2, y2] = moveToward(d.target, c, NODE_RADIUS + arrowLen);
+        return `M${x1},${y1}Q${c[0]},${c[1]} ${x2},${y2}`;
     }
 
     function draw(nodes: MapNode[], edges: MapEdge[], capacityRange: [number, number], drag: d3.DragBehavior<SVGCircleElement, MapNode, MapNode | d3.SubjectPosition>) {
@@ -58,39 +81,47 @@ export function useTrafficMapRenderer(container: Ref<SVGSVGElement | null>) {
             .on("zoom", e => g.attr("transform", e.transform.toString())),
         );
 
-        const strokeScale = d3.scaleLinear().domain(capacityRange).range(TRAFFIC_MAP_CONFIG.edge.strokeRange);
-        const strokeWidth = (e: MapEdge) =>
-            e.capacity === TRAFFIC_MAP_CONFIG.edge.maxCapacity ? 3 : Math.floor(strokeScale(e.capacity));
+        const [minCap, maxNormalCap] = capacityRange;
+        const [minStroke, maxStroke] = TRAFFIC_MAP_CONFIG.edge.strokeRange;
+        const infCapStroke = maxStroke * 1.2;
 
-        const defs = svg.append("defs");
+        const strokeScale = d3.scaleLinear().domain([minCap, maxNormalCap, TRAFFIC_MAP_CONFIG.edge.maxCapacity])
+            .range([minStroke, maxStroke, infCapStroke])
+            .clamp(true);
+        
+        strokeWidths.clear();
         edges.forEach(e => {
-            const sw = strokeWidth(e);
-            defs.append("marker")
-                .attr("id", `arrow-${e.id}`)
-                .attr("viewBox", "0 0 10 10")
-                .attr("refX", TRAFFIC_MAP_CONFIG.edge.arrowRefX[sw - 3])
-                .attr("refY", 5 + getIncrement(e))
-                .attr("markerWidth", 3)
-                .attr("markerHeight", 3)
-                .attr("orient", "auto")
-                .append("path")
-                .attr("d", "M0,0 L10,5 L0,10")
-                .attr("fill", occupancyColor(e));
-        });
+            strokeWidths.set(e.id, strokeScale(e.capacity));
+        })
+        
+        const mid = ARROW.viewBox / 2
+
+        svg.append("defs")
+            .append("marker")
+            .attr("id", "arrow")
+            .attr("viewBox", `0 0 ${ARROW.viewBox} ${ARROW.viewBox}`)
+            .attr("refX", ARROW.baseX)
+            .attr("refY", mid)
+            .attr("markerWidth", ARROW.size)
+            .attr("markerHeight", ARROW.size)
+            .attr("orient", "auto")
+            .append("path")
+            .attr("d", `M0,0 L${ARROW.tipX},${mid} L0,${ARROW.viewBox} Z`)
+            .attr("fill", "context-stroke");
 
         edgeSel = g.append("g").selectAll<SVGPathElement, MapEdge>("path")
             .data(edges).join("path")
             .attr("fill", "none")
-            .attr("stroke-width", strokeWidth)
+            .attr("stroke-width", e => strokeWidths.get(e.id)!)
             .attr("stroke", occupancyColor)
-            .attr("marker-end", e => `url(#arrow-${e.id})`)
+            .attr("marker-end", "url(#arrow)")
             .on("mouseover", (_, e) => tooltip!.text(e.id).style("visibility", "visible"))
             .on("mousemove", ev => tooltip!.style("top", `${ev.pageY + 10}px`).style("left", `${ev.pageX + 10}px`))
             .on("mouseout", () => tooltip!.style("visibility", "hidden"));
 
         nodeSel = g.append("g").selectAll<SVGCircleElement, MapNode>("circle")
             .data(nodes).join("circle")
-            .attr("r", TRAFFIC_MAP_CONFIG.node.radius)
+            .attr("r", NODE_RADIUS)
             .attr("fill", d => d.external ? TRAFFIC_MAP_CONFIG.node.colors.nonControllable : TRAFFIC_MAP_CONFIG.node.colors.controllable)
             .attr("stroke", "black")
             .attr("cursor", "pointer")
@@ -108,8 +139,7 @@ export function useTrafficMapRenderer(container: Ref<SVGSVGElement | null>) {
     }
 
     function tick() {
-        edgeSel?.attr("d", (d: any) =>
-            `M${d.source.x},${d.source.y}${linkArc(d)}${d.target.x},${d.target.y}`);
+        edgeSel?.attr("d", d => linkPath(d));
         nodeSel?.attr("cx", d => d.x!).attr("cy", d => d.y!);
         labelSel?.attr("x", d => d.x!).attr("y", d => d.y!);
     }
@@ -121,16 +151,12 @@ export function useTrafficMapRenderer(container: Ref<SVGSVGElement | null>) {
             .attr("stroke-dasharray", e => (highlightActive && !e.active) ? TRAFFIC_MAP_CONFIG.edge.dashed : 0)
             .transition().duration(50)
             .attr("stroke", occupancyColor);
-
-        edges.forEach(e => {
-            svg!.select(`#arrow-${e.id} path`)
-                .transition().duration(50)
-                .attr("fill", occupancyColor(e));
-        });
     }
 
     function clear() { 
         svg?.selectAll("*").remove(); 
+        strokeWidths.clear();
+        edgeSel = nodeSel = labelSel = null;
     }
 
     function destroy() { 

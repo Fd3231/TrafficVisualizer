@@ -17,9 +17,14 @@ export const TRAFFIC_MAP_CONFIG = {
     },
     edge: {
         maxCapacity: 100000,
-        strokeRange: [3, 9] as [number, number],
-        arrowRefX: [37, 29, 25, 22, 20, 18, 16, 15],
-        dashed: 8
+        strokeRange: [3, 8] as [number, number],
+        dashed: 8,
+        arrow : {
+            size: 3,
+            viewBox: 10,
+            tipX: 10,
+            baseX: 1
+        }
     },
     zoom: {
         min: 0.5,

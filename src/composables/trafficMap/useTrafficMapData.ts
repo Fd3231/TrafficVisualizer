@@ -89,12 +89,3 @@ export function getCapacityRange(links: Record<string, Link>) : [number, number]
         .filter(c => c < TRAFFIC_MAP_CONFIG.edge.maxCapacity);
     return [d3.min(values) ?? 1, d3.max(values) ?? 50]
 }
-
-export function getIncrement(edge: MapEdge) : number {
-    if (edge.bidirectional) return (edge.linknum - 2) * 0.5 + 1;
-    if (edge.linknum === 2) return 1.5;
-    if (edge.linknum === 3) return 2;
-    if (edge.linknum >= 4) return 2 - (edge.linknum - 3) * 0.5;
-    
-    return 0;
-}
