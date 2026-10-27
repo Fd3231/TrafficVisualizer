@@ -1,15 +1,17 @@
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useMapStore } from "../../stores/useMapStore";
 import { useSimulationStore } from "../../stores/useSimulationStore";
 import { buildEdges, buildNodes, getCapacityRange, syncEdges, type MapEdge, type MapNode } from "./useTrafficMapData";
 import { useTrafficMapRenderer } from "./useTrafficMapRenderer";
 import { useTrafficMapForceSimulation } from "./useTrafficMapForceSimulation";
 import { useMapUI } from "./useMapUI";
+import { useFullscreen } from "./useFullscreen";
 
 export function useTrafficMap() {
     const mapStore = useMapStore();
     const simulationStore = useSimulationStore();
     const mapContainer = ref<SVGSVGElement | null>(null);
+    const fullscreenTarget = ref<HTMLElement | null>(null);
 
     let nodes: MapNode[] = [];
     let edges: MapEdge[] = [];
@@ -17,6 +19,7 @@ export function useTrafficMap() {
 
     const renderer = useTrafficMapRenderer(mapContainer);
     const sim = useTrafficMapForceSimulation();
+    const { isFullscreen, toggleFullscreen } = useFullscreen(fullscreenTarget);
 
     function render() {
         if (!nodes.length) return;
@@ -76,6 +79,6 @@ export function useTrafficMap() {
         renderer.destroy(); 
     });
 
-    return { mapContainer, rotateGraph, ...ui };
+    return { mapContainer, fullscreenTarget, isFullscreen, toggleFullscreen, rotateGraph, ...ui };
 
 }

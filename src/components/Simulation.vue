@@ -24,7 +24,7 @@
       <button class="btn btn-outline-success col-auto mx-1" @click="toggle">
         <i class="bi" :class="isPlaying ? 'bi-pause-fill' : 'bi-play-fill'" />
       </button>
-      <button class="btn btn-outline-danger col-auto mx-1" @click="stop">
+      <button :disabled="stepInput<=0" class="btn btn-outline-danger col-auto mx-1" @click="stop">
         <i class="bi bi-stop-fill" />
       </button>
     </div>

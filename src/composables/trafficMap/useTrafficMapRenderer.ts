@@ -22,10 +22,10 @@ export function useTrafficMapRenderer(container: Ref<SVGSVGElement | null>) {
     const strokeWidths = new Map<string, number>();
 
     function addTooltip() {
-        if (tooltip) return;
-        tooltip = d3.select(document.body).append("div")
+        if (tooltip || !container.value) return;
+        tooltip = d3.select(container.value.parentElement as HTMLElement).append("div")
             .attr("class", "traffic-map-tooltip")
-            .style("position", "absolute")
+            .style("position", "fixed")
             .style("visibility", "hidden")
             .style("background", "rgba(0, 0, 0, 0.7)")
             .style("color", "white")
@@ -116,7 +116,7 @@ export function useTrafficMapRenderer(container: Ref<SVGSVGElement | null>) {
             .attr("stroke", occupancyColor)
             .attr("marker-end", "url(#arrow)")
             .on("mouseover", (_, e) => tooltip!.text(e.id).style("visibility", "visible"))
-            .on("mousemove", ev => tooltip!.style("top", `${ev.pageY + 10}px`).style("left", `${ev.pageX + 10}px`))
+            .on("mousemove", ev => tooltip!.style("top", `${ev.clientY + 10}px`).style("left", `${ev.clientX + 10}px`))
             .on("mouseout", () => tooltip!.style("visibility", "hidden"));
 
         nodeSel = g.append("g").selectAll<SVGCircleElement, MapNode>("circle")
